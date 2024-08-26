@@ -1,0 +1,39 @@
+[
+    {
+      "id": 1,
+      "title": "Understanding Blood Pressure",
+      "description": "A comprehensive guide to understanding and managing blood pressure, provided by the American Heart Association.",
+      "url": "https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings"
+    },
+    {
+      "id": 2,
+      "title": "Healthy Eating for Seniors",
+      "description": "Nutrition.gov offers dietary guidelines and resources specifically tailored for older adults.",
+      "url": "https://www.nutrition.gov/topics/nutrition-age/older-individuals"
+    },
+    {
+      "id": 3,
+      "title": "Physical Activity Guidelines for Older Adults",
+      "description": "The World Health Organization provides recommendations for physical activity in older adults.",
+      "url": "https://www.who.int/news-room/fact-sheets/detail/physical-activity"
+    },
+    {
+      "id": 4,
+      "title": "Managing Chronic Conditions",
+      "description": "The National Institute on Aging offers advice on managing chronic conditions common in older adults.",
+      "url": "https://www.nia.nih.gov/health/managing-chronic-conditions"
+    },
+    {
+      "id": 5,
+      "title": "Mental Health and Aging",
+      "description": "Learn about mental health challenges and resources for older adults from Mental Health America.",
+      "url": "https://www.mhanational.org/mental-health-and-aging"
+    },
+    {
+      "id": 6,
+      "title": "Falls Prevention in Older Adults",
+      "description": "The Centers for Disease Control and Prevention (CDC) provides strategies to prevent falls among older adults.",
+      "url": "https://www.cdc.gov/homeandrecreationalsafety/falls/adultfalls.html"
+    }
+  ]
+  
