@@ -1,6 +1,6 @@
 <template>
   <!-- Navbar -->
-  <MDBNavbar expand="lg" light bg="light" container>
+  <MDBNavbar expand="lg" light bg="light" container class="fixed-top">
     <MDBNavbarBrand href="#">Elderly Health App</MDBNavbarBrand>
     <MDBNavbarToggler @click="collapse1 = !collapse1" target="#navbarSupportedContent"></MDBNavbarToggler>
     <MDBCollapse v-model="collapse1" id="navbarSupportedContent">
@@ -11,33 +11,37 @@
         <MDBNavbarItem href="#">About</MDBNavbarItem>
       </MDBNavbarNav>
       <MDBNavbarNav right>
-        <!-- Avatar -->
-        <MDBDropdown class="nav-item" v-model="dropdown6">
-          <MDBDropdownToggle tag="a" class="nav-link" @click="dropdown6 = !dropdown6">
-            <img
-              src="https://mdbootstrap.com/img/Photos/Avatars/img (31).webp"
-              class="rounded-circle"
-              height="22"
-              alt=""
-              loading="lazy"
-            />
-          </MDBDropdownToggle>
-          <MDBDropdownMenu>
-            <MDBDropdownItem href="#">My profile</MDBDropdownItem>
-            <MDBDropdownItem href="#">Settings</MDBDropdownItem>
-            <MDBDropdownItem href="#">Logout</MDBDropdownItem>
-          </MDBDropdownMenu>
-        </MDBDropdown>
+        <div v-if="isLoggedIn">
+          <!-- Avatar -->
+          <MDBDropdown class="nav-item" v-model="dropdown6">
+            <MDBDropdownToggle tag="a" class="nav-link" @click="dropdown6 = !dropdown6">
+              <img
+                :src="userPhotoURL || 'https://mdbootstrap.com/img/Photos/Avatars/img (31).webp'"
+                class="rounded-circle"
+                height="22"
+                alt="User Avatar"
+                loading="lazy"
+              />
+            </MDBDropdownToggle>
+            <MDBDropdownMenu>
+              <MDBDropdownItem href="#">My profile</MDBDropdownItem>
+              <MDBDropdownItem href="#">Logout</MDBDropdownItem>
+            </MDBDropdownMenu>
+          </MDBDropdown>
+        </div>
+        <div v-else>
+          <MDBBtn color="primary" @click="$router.push('/login')">Login</MDBBtn>
+        </div>
       </MDBNavbarNav>
     </MDBCollapse>
   </MDBNavbar>
 
   <!-- Header Section with Background Image -->
-  <header class="bg-image text-white text-center" style="background-image: url('https://example.com/background.jpg'); background-size: cover; background-position: center; height: 80vh;">
+  <header class="bg-image text-black text-center" style="background-image: url('../src/assets/img/homebgimage.jpg'); background-size: cover; background-position: center; height: 100vh;">
     <div class="d-flex flex-column justify-content-center align-items-center h-100">
-      <h1 class="display-4 font-weight-bold">Welcome to the Elderly Health App</h1>
-      <p class="lead">Your health, our priority. Stay fit and healthy with personalized tips and support.</p>
-      <MDBBtn color="primary" size="lg" class="mt-4">Get Started</MDBBtn>
+      <h1 class="display-4 font-weight-bold" style="color: black;">Welcome to the Elderly Health App</h1>
+      <p class="lead" style="color: black;">Your health, our priority. Stay fit and healthy with personalized tips and support.</p>
+      <MDBBtn color="primary" size="lg" class="mt-4">Get Started With Explore Health Resources</MDBBtn>
     </div>
   </header>
 
@@ -52,21 +56,21 @@
   </section>
 
   <!-- Features Section -->
-  <section class="container mt-5">
+  <section class="container mt-5" style="margin-bottom: 5%;">
     <div class="row text-center">
       <div class="col-md-4">
-        <MDBIcon fas icon="heartbeat" size="3x" class="mb-3" />
-        <h3>Health Monitoring</h3>
-        <p>Track your vital signs and health metrics easily with our intuitive interface.</p>
+        <MDBIcon fas icon="stethoscope" size="3x" class="mb-3" />
+        <h3>Health Resources</h3>
+        <p>Updated to reflect the purpose of managing and monitoring well-being.</p>
       </div>
       <div class="col-md-4">
-        <MDBIcon fas icon="running" size="3x" class="mb-3" />
-        <h3>Exercise Routines</h3>
+        <MDBIcon fas icon="map-marked-alt" size="3x" class="mb-3" />
+        <h3>Health Department Map</h3>
         <p>Access custom exercise plans tailored to your needs to keep you active.</p>
       </div>
       <div class="col-md-4">
-        <MDBIcon fas icon="calendar-check" size="3x" class="mb-3" />
-        <h3>Reminders</h3>
+        <MDBIcon fas icon="calendar-alt" size="3x" class="mb-3" />
+        <h3>Events</h3>
         <p>Set reminders for medication, appointments, and more to stay on track.</p>
       </div>
     </div>
@@ -88,7 +92,10 @@ import {
   MDBDropdownItem,
   MDBIcon
 } from 'mdb-vue-ui-kit';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { auth } from '../firebase'; // Ensure you import the Firebase auth instance
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 export default {
   components: {
@@ -106,13 +113,40 @@ export default {
     MDBIcon
   },
   setup() {
+    const router = useRouter();
     const collapse1 = ref(false);
-    const dropdown1 = ref(false);
     const dropdown6 = ref(false);
+    const isLoggedIn = ref(false);
+    const userPhotoURL = ref('');
+
+    // Monitor authentication state
+    onMounted(() => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          isLoggedIn.value = true;
+          userPhotoURL.value = user.photoURL;
+        } else {
+          isLoggedIn.value = false;
+          userPhotoURL.value = '';
+        }
+      });
+    });
+
+    const logout = async () => {
+      try {
+        await signOut(auth);
+        router.push('/login');
+      } catch (error) {
+        console.error('Logout failed:', error.message);
+      }
+    };
+
     return {
       collapse1,
-      dropdown1,
-      dropdown6
+      dropdown6,
+      isLoggedIn,
+      userPhotoURL,
+      logout
     };
   }
 };
