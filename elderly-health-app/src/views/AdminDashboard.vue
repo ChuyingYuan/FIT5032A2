@@ -33,19 +33,20 @@
       <!-- Sidebar -->
       <div :class="['sidebar', 'bg-light', 'p-6', { 'd-none': !isSidebarVisible }]" id="sidebar">
         <MDBListGroup>
-          <MDBListGroupItem active href="#" @click="setActive('dashboard')">
+          <MDBListGroupItem href="#" :active="isActive('dashboard')" @click="setActive('dashboard')">
             <MDBIcon fas icon="tachometer-alt" class="me-2" /> Dashboard
           </MDBListGroupItem>
-          <MDBListGroupItem href="#" @click="setActive('Manage Resources')">
-            <MDBIcon fas icon="users" class="me-2" /> Manage Resources
+          <MDBListGroupItem href="#" :active="isActive('Manage Resources')" @click="setActive('Manage Resources')">
+            <MDBIcon fas icon="book-open" class="me-2" /> Manage Resources
           </MDBListGroupItem>
-          <MDBListGroupItem href="#" @click="setActive('reports')">
+          <MDBListGroupItem href="#" :active="isActive('reports')" @click="setActive('reports')">
             <MDBIcon fas icon="chart-line" class="me-2" /> Reports
           </MDBListGroupItem>
-          <MDBListGroupItem href="#" @click="setActive('settings')">
+          <MDBListGroupItem href="#" :active="isActive('settings')" @click="setActive('settings')">
             <MDBIcon fas icon="cogs" class="me-2" /> Settings
           </MDBListGroupItem>
         </MDBListGroup>
+
       </div>
 
       <!-- Main Content Area -->
@@ -175,6 +176,10 @@ export default {
     const resourceForm = ref({ title: '', description: '', url: '' });
     const isSidebarVisible = ref(true); // Visibility for the sidebar
 
+    const isActive = (section) => {
+      return activeSection.value === section;
+    };
+
     // Fetch resources from AWS S3
     const fetchResources = async () => {
       try {
@@ -226,11 +231,11 @@ export default {
           return;
         }
 
-        const newResource = { 
+        const newResource = {
           id: `resource-${Date.now()}`, // Generating a unique ID using current timestamp
-          title: resourceForm.value.title, 
-          description: resourceForm.value.description, 
-          url: resourceForm.value.url, 
+          title: resourceForm.value.title,
+          description: resourceForm.value.description,
+          url: resourceForm.value.url,
           userRatings: [] // Initialize with an empty user ratings array
         };
 
@@ -309,7 +314,8 @@ export default {
       calculateAverageRating,
       toggleSidebar,
       logout,
-      openAddResourceModal
+      openAddResourceModal,
+      isActive
     };
   }
 };

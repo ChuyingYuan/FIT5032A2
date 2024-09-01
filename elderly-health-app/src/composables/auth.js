@@ -30,10 +30,29 @@ const checkAuthState = () => {
 
 const login = async (email, password) => {
   try {
+    // Sign in with email and password
     await signInWithEmailAndPassword(auth, email, password);
-    router.push('/');
+
+    // Get the currently signed-in user
+    const user = auth.currentUser;
+
+    if (user) {
+      // Retrieve the user role from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userRole = userDoc.exists() ? userDoc.data().role : 'user';
+
+      // Check the user's role and navigate accordingly
+      if (userRole === 'admin') {
+        router.push('/admin-dashboard');
+      } else {
+        router.push('/');
+      }
+    } else {
+      console.error('User not found after login.');
+    }
   } catch (error) {
     console.error('Login failed', error);
+    throw error;
   }
 };
 
