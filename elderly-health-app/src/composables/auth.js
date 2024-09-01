@@ -1,11 +1,11 @@
 // src/composables/auth.js
 import { ref, onMounted } from 'vue';
 import { auth, db } from '../firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  onAuthStateChanged, 
-  signOut 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import router from '@/router';
@@ -66,8 +66,12 @@ const signup = async (email, password, userRole, firstName, lastName) => {
       email: email,
       createdAt: new Date()
     });
+    setTimeout(() => {
+      router.push('/login');  // Redirect to the login page after successful signup
+    }, 2000);
   } catch (error) {
     console.error('Sign-up failed', error);
+    throw error;
   }
 };
 

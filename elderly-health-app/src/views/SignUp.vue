@@ -3,23 +3,38 @@
         <div class="row">
             <div class="col-md-4 offset-md-4">
                 <h1 class="text-center" style="margin-top: 20%;">Sign Up</h1>
+
+                <div v-if="errorMessage" class="alert alert-danger text-center" role="alert" style="margin-top: 5%;">
+                    {{ errorMessage }}
+                </div>
+
                 <form @submit.prevent="handleSignup" style="margin-top: 10%;">
                     <!-- 2 column grid layout with text inputs for the first and last names -->
                     <MDBRow class="mb-4">
                         <MDBCol>
-                            <MDBInput type="text" label="First name" id="form3FirstName" v-model="form3FirstName" required />
+                            <MDBInput type="text" label="First name" id="form3FirstName" v-model="form3FirstName"
+                                @input="validateFirstName" required />
+                            <div v-if="firstNameError" class="text-danger">{{ firstNameError }}</div>
                         </MDBCol>
                         <MDBCol>
-                            <MDBInput type="text" label="Last name" id="form3LastName" v-model="form3LastName" required />
+                            <MDBInput type="text" label="Last name" id="form3LastName" v-model="form3LastName"
+                                @input="validateLastName" required />
+                            <div v-if="lastNameError" class="text-danger">{{ lastNameError }}</div>
                         </MDBCol>
                     </MDBRow>
                     <!-- Email input -->
-                    <MDBInput type="email" label="Email address" id="form3Email" v-model="form3Email" wrapperClass="mb-4" required />
+                    <MDBInput type="email" label="Email address" id="form3Email" v-model="form3Email"
+                        @input="validateEmail" wrapperClass="mb-4" required />
+                    <div v-if="emailError" class="text-danger">{{ emailError }}</div>
+
                     <!-- Password input -->
-                    <MDBInput type="password" label="Password" id="form3Password" v-model="form3Password" wrapperClass="mb-4" required />
+                    <MDBInput type="password" label="Password" id="form3Password" v-model="form3Password"
+                        @input="validatePassword" wrapperClass="mb-4" required />
+                    <div v-if="passwordError" class="text-danger">{{ passwordError }}</div>
 
                     <!-- Checkbox -->
-                    <MDBCheckbox label="Remember me" id="form3SubscribeCheck" v-model="form3SubscribeCheck" wrapperClass="d-flex justify-content-center mb-4" />
+                    <MDBCheckbox label="Remember me" id="form3SubscribeCheck" v-model="form3SubscribeCheck"
+                        wrapperClass="d-flex justify-content-center mb-4" />
 
                     <!-- Submit button -->
                     <MDBBtn type="submit" color="primary" block class="mb-4"> Sign up </MDBBtn>
@@ -49,14 +64,10 @@
                 <div v-if="showSuccess" class="alert alert-success" role="alert" style="margin-top: 10%;">
                     Signup successful! Redirecting to login...
                 </div>
-                <div v-if="showError" class="alert alert-danger" role="alert">
-                    Signup failed: {{ errorMessage }}
-                </div>
             </div>
         </div>
     </div>
 </template>
-
 <script>
 import { signup } from '../composables/auth';  // Ensure this is the correct path
 import {
@@ -68,7 +79,6 @@ import {
     MDBIcon
 } from "mdb-vue-ui-kit";
 import { ref } from "vue";
-import { useRouter } from 'vue-router';
 
 export default {
     components: {
@@ -80,8 +90,6 @@ export default {
         MDBIcon
     },
     setup() {
-        const router = useRouter();  // Get the router instance
-
         const form3FirstName = ref("");
         const form3LastName = ref("");
         const form3Email = ref("");
@@ -92,26 +100,54 @@ export default {
         const showError = ref(false);
         const errorMessage = ref("");
 
+        const firstNameError = ref("");
+        const lastNameError = ref("");
+        const emailError = ref("");
+        const passwordError = ref("");
+
+        // Validation methods
+        const validateFirstName = () => {
+            firstNameError.value = form3FirstName.value.length < 3 ? "First name must be at least 3 characters." : "";
+        };
+
+        const validateLastName = () => {
+            lastNameError.value = form3LastName.value.length < 3 ? "Last name must be at least 3 characters." : "";
+        };
+
+        const validateEmail = () => {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            emailError.value = !emailPattern.test(form3Email.value) ? "Invalid email format." : "";
+        };
+
+        const validatePassword = () => {
+            const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+            passwordError.value = !passwordPattern.test(form3Password.value)
+                ? "Password must be at least 8 characters, include one uppercase letter, one lowercase letter, and one number."
+                : "";
+        };
+
         const handleSignup = async () => {
+            validateFirstName();
+            validateLastName();
+            validateEmail();
+            validatePassword();
+
+            // If there are any validation errors, do not proceed with signup
+            if (firstNameError.value || lastNameError.value || emailError.value || passwordError.value) {
+                showError.value = true;
+                return;
+            }
+
             try {
-                // Sign up the user with Firebase Authentication
                 await signup(form3Email.value, form3Password.value, "user", form3FirstName.value, form3LastName.value);
-                showSuccess.value = true;
-
-                // Redirect after a short delay
-                setTimeout(() => {
-                    router.push('/login');  // Redirect to the login page after successful signup
-                }, 2000);
-
             } catch (error) {
-                // Show error message
                 showError.value = true;
                 errorMessage.value = error.message;
-
-                // Hide the error message after a few seconds
-                setTimeout(() => {
-                    showError.value = false;
-                }, 3000);
+                form3FirstName.value = "";
+                form3LastName.value = "";
+                form3Email.value = "";
+                form3Password.value = "";
+                form3SubscribeCheck.value = true;
             }
         };
 
@@ -124,7 +160,15 @@ export default {
             handleSignup,
             showSuccess,
             showError,
-            errorMessage
+            errorMessage,
+            firstNameError,
+            lastNameError,
+            emailError,
+            passwordError,
+            validateFirstName,
+            validateLastName,
+            validateEmail,
+            validatePassword
         };
     },
 };
