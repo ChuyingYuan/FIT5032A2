@@ -68,6 +68,7 @@
         </div>
     </div>
 </template>
+
 <script>
 import { signup } from '../composables/auth';  // Ensure this is the correct path
 import {
@@ -79,6 +80,7 @@ import {
     MDBIcon
 } from "mdb-vue-ui-kit";
 import { ref } from "vue";
+import DOMPurify from 'dompurify';  // Import DOMPurify
 
 export default {
     components: {
@@ -126,6 +128,10 @@ export default {
                 : "";
         };
 
+        const sanitizeInput = (input) => {
+            return DOMPurify.sanitize(input);
+        };
+
         const handleSignup = async () => {
             validateFirstName();
             validateLastName();
@@ -139,10 +145,19 @@ export default {
             }
 
             try {
-                await signup(form3Email.value, form3Password.value, "user", form3FirstName.value, form3LastName.value);
+                // Sanitize user inputs before sending to backend
+                const sanitizedFirstName = sanitizeInput(form3FirstName.value);
+                const sanitizedLastName = sanitizeInput(form3LastName.value);
+                const sanitizedEmail = sanitizeInput(form3Email.value);
+                const sanitizedPassword = sanitizeInput(form3Password.value);
+
+                await signup(sanitizedEmail, sanitizedPassword, "user", sanitizedFirstName, sanitizedLastName);
+                showSuccess.value = true;
             } catch (error) {
                 showError.value = true;
                 errorMessage.value = error.message;
+
+                // Clear form fields on error
                 form3FirstName.value = "";
                 form3LastName.value = "";
                 form3Email.value = "";

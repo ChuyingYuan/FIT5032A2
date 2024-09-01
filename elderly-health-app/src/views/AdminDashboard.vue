@@ -141,6 +141,7 @@ import {
 import { ref, onMounted } from 'vue';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import DOMPurify from 'dompurify';  // Import DOMPurify
 
 export default {
   components: {
@@ -175,6 +176,10 @@ export default {
     const editingResource = ref(null);
     const resourceForm = ref({ title: '', description: '', url: '' });
     const isSidebarVisible = ref(true); // Visibility for the sidebar
+
+    const sanitizeInput = (input) => {
+      return DOMPurify.sanitize(input);
+    };
 
     const isActive = (section) => {
       return activeSection.value === section;
@@ -226,16 +231,21 @@ export default {
 
     const saveResource = async () => {
       try {
-        if (!resourceForm.value.title || !resourceForm.value.description || !resourceForm.value.url) {
+        // Sanitize inputs before using them
+        const sanitizedTitle = sanitizeInput(resourceForm.value.title);
+        const sanitizedDescription = sanitizeInput(resourceForm.value.description);
+        const sanitizedURL = sanitizeInput(resourceForm.value.url);
+
+        if (!sanitizedTitle || !sanitizedDescription || !sanitizedURL) {
           console.error('Please fill in all fields.');
           return;
         }
 
         const newResource = {
           id: `resource-${Date.now()}`, // Generating a unique ID using current timestamp
-          title: resourceForm.value.title,
-          description: resourceForm.value.description,
-          url: resourceForm.value.url,
+          title: sanitizedTitle,
+          description: sanitizedDescription,
+          url: sanitizedURL,
           userRatings: [] // Initialize with an empty user ratings array
         };
 
@@ -320,7 +330,6 @@ export default {
   }
 };
 </script>
-
 
 <style scoped>
 .admin-dashboard {

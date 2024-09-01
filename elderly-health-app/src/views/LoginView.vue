@@ -65,6 +65,8 @@ import {
   MDBIcon,
 } from "mdb-vue-ui-kit";
 import { ref } from "vue";
+import DOMPurify from 'dompurify';  // Import DOMPurify
+
 export default {
   components: {
     MDBRow,
@@ -80,16 +82,23 @@ export default {
     const form2LoginCheck = ref(true);
     const errorMessage = ref(""); // State to store error message
 
+    const sanitizeInput = (input) => {
+      return DOMPurify.sanitize(input);
+    };
+
     const handleLogin = async () => {
       try {
-        await login(form2Email.value, form2Password.value);
+        // Sanitize inputs before using them
+        const sanitizedEmail = sanitizeInput(form2Email.value);
+        const sanitizedPassword = sanitizeInput(form2Password.value);
+
+        await login(sanitizedEmail, sanitizedPassword);
       } catch (error) {
         // Display the error message and stay on the login page
         errorMessage.value = "Invalid email or password. Please try again.";
         console.error("Login failed:", error.message);
       }
     };
-
 
     return {
       form2Email,
