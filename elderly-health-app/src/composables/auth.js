@@ -8,6 +8,7 @@ import {
   signOut 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import router from '@/router';
 
 const user = ref(null);
 const role = ref(null);
@@ -30,6 +31,7 @@ const checkAuthState = () => {
 const login = async (email, password) => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    router.push('/');
   } catch (error) {
     console.error('Login failed', error);
   }

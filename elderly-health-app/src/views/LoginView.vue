@@ -1,8 +1,14 @@
 <template>
-  <div class="container mt-5" >
+  <div class="container mt-5">
     <div class="row">
       <div class="col-md-4 offset-md-4">
         <h1 class="text-center" style="margin-top: 20%;">Login</h1>
+
+        <!-- Display login failed message -->
+        <div v-if="errorMessage" class="alert alert-danger text-center" role="alert" style="margin-top: 5%;">
+          {{ errorMessage }}
+        </div>
+
         <form @submit.prevent="handleLogin" style="margin-top: 10%;">
           <MDBInput type="email" label="Email address" id="form2Email" v-model="form2Email" wrapperClass="mb-4"
             required />
@@ -59,8 +65,6 @@ import {
   MDBIcon,
 } from "mdb-vue-ui-kit";
 import { ref } from "vue";
-import { useRouter } from 'vue-router';
-
 export default {
   components: {
     MDBRow,
@@ -74,22 +78,24 @@ export default {
     const form2Email = ref("");
     const form2Password = ref("");
     const form2LoginCheck = ref(true);
-    const router = useRouter();
+    const errorMessage = ref(""); // State to store error message
 
     const handleLogin = async () => {
       try {
         await login(form2Email.value, form2Password.value);
-        router.push('/');
       } catch (error) {
+        // Display the error message and stay on the login page
+        errorMessage.value = "Invalid email or password. Please try again.";
         console.error("Login failed:", error.message);
-        // Handle error display here, like showing an alert or a toast
       }
     };
+
 
     return {
       form2Email,
       form2Password,
       form2LoginCheck,
+      errorMessage,
       handleLogin,
     };
   },

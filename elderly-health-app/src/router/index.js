@@ -9,47 +9,67 @@ import { auth } from '../firebase';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 
+// Define routes
 const routes = [
   { path: '/', name: 'home', component: HomeView },
-  { path: '/health-resources', component: HealthResources },
-  { path: '/profile', component: UserProfile },
-  { path: '/login', component: LoginView },
-  { path: '/signup', component: SignUp },
+  { path: '/health-resources', name: 'HealthResources', component: HealthResources },
+  { path: '/profile', name: 'UserProfile', component: UserProfile },
+  { path: '/login', name: 'LoginView', component: LoginView },
+  { path: '/signup', name: 'SignUp', component: SignUp },
   { 
-    path: '/admin', 
+    path: '/admin-dashboard', 
     name: 'AdminDashboard', 
     component: AdminDashboard, 
     meta: { requiresAdmin: true }
   },
   {
     path: '/about',
-    name: 'about',
+    name: 'About',
     component: () => import('../views/AboutView.vue')
   }
 ];
 
+// Create router instance
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 });
 
-// Navigation Guard to check admin role
-router.beforeEach(async (to, from, next) => {
-  const user = auth.currentUser;
-  if (to.matched.some(record => record.meta.requiresAdmin)) {
-    if (user) {
-      const roleDoc = await getDoc(doc(db, 'roles', user.uid));
-      const userRole = roleDoc.exists() ? roleDoc.data().role : 'user';
-      if (userRole === 'admin') {
-        next();
+// Helper function to check user role
+const checkUserRole = () => {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          // Retrieve user role from Firestore
+          const roleDoc = await getDoc(doc(db, 'users', user.uid));
+          const userRole = roleDoc.exists() ? roleDoc.data().role : 'user';
+          resolve(userRole);
+        } catch (error) {
+          console.error('Failed to retrieve user role:', error);
+          resolve('user'); // Default to 'user' on error
+        }
       } else {
-        next({ name: 'home' }); // Redirect to home if not admin
+        resolve(null); // User is not logged in
       }
-    } else {
-      next({ name: 'home' }); // Redirect to home if not logged in
+      unsubscribe(); // Unsubscribe from onAuthStateChanged listener
+    });
+  });
+};
+
+// Navigation guard to check admin role
+router.beforeEach(async (to, from, next) => {
+  // If the route requires admin access
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    const userRole = await checkUserRole();
+
+    if (userRole === 'admin') {
+      next(); // Allow access if the user is an admin
+    } else if (userRole === 'user' || userRole === null) {
+      next({ name: 'home' }); // Redirect to home if not an admin or not logged in
     }
   } else {
-    next(); // Make sure to always call next()
+    next(); // Continue to next route if no admin access is required
   }
 });
 
