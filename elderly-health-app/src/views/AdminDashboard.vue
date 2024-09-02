@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-dashboard">
+  <div class="admin-dashboard" @click="hideSidebar">
     <!-- Navbar -->
     <MDBNavbar expand="lg" light bg="light" container class="fixed-top">
       <MDBNavbarBrand href="#">Admin Dashboard</MDBNavbarBrand>
@@ -13,7 +13,7 @@
         </MDBNavbarNav>
         <MDBNavbarNav right>
           <MDBDropdown class="nav-item" v-model="dropdown6">
-            <MDBDropdownToggle tag="a" class="nav-link" @click="dropdown6 = !dropdown6">
+            <MDBDropdownToggle tag="a" class="nav-link" @click.stop="dropdown6 = !dropdown6">
               <img :src="userPhotoURL || 'https://mdbootstrap.com/img/Photos/Avatars/img (31).webp'"
                 class="rounded-circle" height="22" alt="User Avatar" loading="lazy" />
             </MDBDropdownToggle>
@@ -26,12 +26,16 @@
     </MDBNavbar>
 
     <!-- Sidebar Toggle Button for Mobile -->
-    <button class="btn btn-secondary d-lg-none my-3" @click="toggleSidebar">Toggle Sidebar</button>
+    <button class="btn btn-secondary d-lg-none my-3" @click.stop="toggleSidebar">Toggle Sidebar</button>
 
     <!-- Sidebar and Content Layout -->
     <div class="d-flex">
       <!-- Sidebar -->
-      <div :class="['sidebar', 'bg-light', 'p-6', { 'd-none': !isSidebarVisible }]" id="sidebar">
+      <div
+        :class="['sidebar', 'bg-light', 'p-6', { show: isSidebarVisible, 'd-lg-block': true }]"
+        id="sidebar"
+        @click.stop
+      >
         <MDBListGroup>
           <MDBListGroupItem href="#" :active="isActive('dashboard')" @click="setActive('dashboard')">
             <MDBIcon fas icon="tachometer-alt" class="me-2" /> Dashboard
@@ -46,7 +50,6 @@
             <MDBIcon fas icon="cogs" class="me-2" /> Settings
           </MDBListGroupItem>
         </MDBListGroup>
-
       </div>
 
       <!-- Main Content Area -->
@@ -98,7 +101,7 @@
 
     <!-- Modal for Adding/Editing Resources -->
     <MDBModal v-model="showResourceModal" staticBackdrop>
-      <MDBModalHeader class="mt-3"> <!-- Add margin-top class here -->
+      <MDBModalHeader class="mt-3">
         <MDBModalTitle>{{ editingResource ? 'Edit Resource' : 'Add Resource' }}</MDBModalTitle>
       </MDBModalHeader>
       <MDBModalBody>
@@ -111,10 +114,8 @@
         <MDBBtn color="primary" @click="saveResource">{{ editingResource ? 'Update' : 'Add' }}</MDBBtn>
       </MDBModalFooter>
     </MDBModal>
-
   </div>
 </template>
-
 <script>
 import {
   MDBNavbar,
@@ -175,7 +176,7 @@ export default {
     const showResourceModal = ref(false);
     const editingResource = ref(null);
     const resourceForm = ref({ title: '', description: '', url: '' });
-    const isSidebarVisible = ref(true); // Visibility for the sidebar
+    const isSidebarVisible = ref(false); // Sidebar is hidden by default on mobile
 
     const sanitizeInput = (input) => {
       return DOMPurify.sanitize(input);
@@ -185,7 +186,6 @@ export default {
       return activeSection.value === section;
     };
 
-    // Fetch resources from AWS S3
     const fetchResources = async () => {
       try {
         const response = await fetch('https://5032a2.s3.ap-southeast-2.amazonaws.com/resources.json');
@@ -200,21 +200,24 @@ export default {
       fetchResources();
     });
 
-    // Calculate average rating for a resource
     const calculateAverageRating = (resource) => {
       if (!resource.userRatings || resource.userRatings.length === 0) return 'N/A';
       const total = resource.userRatings.reduce((sum, rating) => sum + rating.rating, 0);
       return (total / resource.userRatings.length).toFixed(2);
     };
 
-    // Function to handle section change
     const setActive = (section) => {
       activeSection.value = section;
     };
 
-    // Toggle Sidebar visibility for mobile
     const toggleSidebar = () => {
-      isSidebarVisible.value = !isSidebarVisible.value;
+      isSidebarVisible.value = !isSidebarVisible.value;  // Toggle sidebar visibility
+    };
+
+    const hideSidebar = () => {
+      if (window.innerWidth < 992) {
+        isSidebarVisible.value = false;
+      }
     };
 
     const openAddResourceModal = () => {
@@ -231,7 +234,6 @@ export default {
 
     const saveResource = async () => {
       try {
-        // Sanitize inputs before using them
         const sanitizedTitle = sanitizeInput(resourceForm.value.title);
         const sanitizedDescription = sanitizeInput(resourceForm.value.description);
         const sanitizedURL = sanitizeInput(resourceForm.value.url);
@@ -242,21 +244,17 @@ export default {
         }
 
         const newResource = {
-          id: `resource-${Date.now()}`, // Generating a unique ID using current timestamp
+          id: `resource-${Date.now()}`,
           title: sanitizedTitle,
           description: sanitizedDescription,
           url: sanitizedURL,
-          userRatings: [] // Initialize with an empty user ratings array
+          userRatings: []
         };
 
-        // Add the new resource to the resources array
         resources.value.push(newResource);
-
-        // Update the resources in S3
         await updateResourcesOnS3();
-
         closeModal();
-        fetchResources(); // Refresh the list after adding
+        fetchResources();
       } catch (error) {
         console.error('Failed to save resource:', error);
       }
@@ -269,7 +267,7 @@ export default {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(resources.value) // Send updated resources list to the backend
+          body: JSON.stringify(resources.value)
         });
 
         if (!response.ok) {
@@ -323,6 +321,7 @@ export default {
       closeModal,
       calculateAverageRating,
       toggleSidebar,
+      hideSidebar,
       logout,
       openAddResourceModal,
       isActive
@@ -330,25 +329,25 @@ export default {
   }
 };
 </script>
-
 <style scoped>
 .admin-dashboard {
   margin-top: 70px;
   /* Adjust the margin-top to account for the fixed navbar */
+  position: relative;
 }
 
 .sidebar {
   width: 250px;
   height: 100vh;
   position: fixed;
-  top: 70px;
-  /* Adjust for fixed navbar height */
+  top: 70px; /* Adjust for fixed navbar height */
   left: 0;
   transition: transform 0.3s ease-in-out;
+  z-index: 1030;
 }
 
-.d-none {
-  display: none !important;
+.sidebar.show {
+  transform: translateX(0); /* Visible state when toggled */
 }
 
 .content {
@@ -360,10 +359,6 @@ export default {
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
-  }
-
-  .d-flex {
-    flex-direction: column;
   }
 
   .content {
