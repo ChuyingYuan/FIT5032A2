@@ -1,27 +1,26 @@
-// functions/index.js
-const functions = require('firebase-function')
-const admin = require('firebase-admin')
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 // Initialize Firebase Admin SDK
-admin.initializeApp()
+admin.initializeApp();
 
-const { v4: uuidv4 } = require('uuid')
+const {v4: uuidv4} = require("uuid");
 
 // Firestore reference
-const adminDb = admin.firestore()
+const adminDb = admin.firestore();
 
 exports.bookAppointment = functions.https.onRequest(async (req, res) => {
   try {
     // Check if the request method is POST
-    if (req.method !== 'POST') {
-      return res.status(405).send('Method Not Allowed')
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
     }
 
     // Parse the request body for appointment details
-    const { name, email, phone, date, time } = req.body
+    const {name, email, phone, date, time} = req.body;
 
     if (!name || !email || !phone || !date || !time) {
-      return res.status(400).send('Missing required fields')
+      return res.status(400).send("Missing required fields");
     }
 
     // Create appointment data with unique ID
@@ -32,15 +31,19 @@ exports.bookAppointment = functions.https.onRequest(async (req, res) => {
       phone,
       date,
       time,
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
-    }
+      // eslint-disable-next-line max-len
+      timestamp: admin.firestore.FieldValue.serverTimestamp(), // Save timestamp when booking was made
+    };
 
     // Store the appointment in Firestore (or another database)
-    await adminDb.collection('appointments').add(appointment)
+    await adminDb.collection("appointments").add(appointment);
 
-    return res.status(200).send({ message: 'Appointment booked successfully', appointment })
+    return res.status(200).send({
+      message: "Appointment booked successfully",
+      appointment,
+    });
   } catch (error) {
-    console.error('Error booking appointment:', error)
-    return res.status(500).send('Internal Server Error')
+    console.error("Error booking appointment:", error);
+    return res.status(500).send("Internal Server Error");
   }
-})
+});
