@@ -56,7 +56,7 @@
   <!-- Features Section -->
   <section class="container mt-5" style="margin-bottom: 5%;">
     <div class="row text-center">
-      <div class="col-md-3">
+      <div class="col-md-3 clickable" style="cursor: pointer;" @click="$router.push('/appointment-booking')">
         <MDBIcon fas icon="stethoscope" size="3x" class="mb-3" />
         <h3>Health Consult Appointments</h3>
         <p>Updated to reflect the purpose of managing and monitoring well-being.</p>
