@@ -11,6 +11,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "dompurify": "^3.1.6",
     "express": "^4.19.2",
     "firebase": "^10.13.0",
