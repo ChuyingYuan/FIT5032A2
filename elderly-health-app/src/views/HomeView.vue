@@ -66,7 +66,7 @@
         <h3>Health Resources</h3>
         <p>Updated to reflect the purpose of managing and monitoring well-being.</p>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-3 clickable" style="cursor: pointer;" @click="$router.push('/HealthDepartment')">
         <MDBIcon fas icon="map-marked-alt" size="3x" class="mb-3" />
         <h3>Health Department Map</h3>
         <p>Access custom exercise plans tailored to your needs to keep you active.</p>

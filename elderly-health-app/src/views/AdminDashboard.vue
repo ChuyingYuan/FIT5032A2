@@ -54,6 +54,9 @@
         <h3>{{ activeSection }}</h3>
         <div v-if="activeSection === 'Appointments'">
           <!-- Dashboard Content -->
+          <!-- Add Export to CSV Button -->
+          <button class="btn btn-secondary my-3" @click="exportAppointmentsToCSV">Export to CSV</button>
+
           <div v-if="appointments.length === 0">
             <p>No appointments found.</p>
           </div>
@@ -349,6 +352,45 @@ export default {
       return activeSection.value === section;
     };
 
+    const exportAppointmentsToCSV = () => {
+      if (appointments.value.length === 0) {
+        console.warn('No appointments available to export.');
+        return;
+      }
+
+      // Prepare the CSV header
+      const csvHeader = ['Name', 'Email', 'Date', 'Time', 'Status', 'Attachment URL'].join(',') + '\n';
+
+      // Prepare the CSV rows from the appointments data
+      const csvRows = appointments.value.map(appointment => {
+        const date = formatDate(appointment.date);
+        const time = formatTime(appointment.time);
+        const attachmentUrl = appointment.attachmentUrl || 'N/A';
+
+        return [
+          appointment.name,
+          appointment.email,
+          date,
+          time,
+          appointment.status,
+          attachmentUrl
+        ].join(',');
+      }).join('\n');
+
+      // Combine the header and rows
+      const csvContent = csvHeader + csvRows;
+
+      // Trigger file download
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'appointments.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     const fetchResources = async () => {
       try {
         const response = await fetch('https://5032a2.s3.ap-southeast-2.amazonaws.com/resources.json');
@@ -495,7 +537,8 @@ export default {
       uploadAttachment,
       deleteAppointment,
       sendEmail,
-      updateAppointment
+      updateAppointment,
+      exportAppointmentsToCSV
     };
   }
 };

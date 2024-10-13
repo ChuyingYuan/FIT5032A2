@@ -1,0 +1,84 @@
+{
+  "departments": [
+    {
+      "name": "Royal Melbourne Hospital",
+      "address": "300 Grattan St, Parkville VIC 3050, Australia",
+      "coordinates": {
+        "latitude": -37.798227,
+        "longitude": 144.955126
+      }
+    },
+    {
+      "name": "St Vincent's Hospital Melbourne",
+      "address": "41 Victoria Parade, Fitzroy VIC 3065, Australia",
+      "coordinates": {
+        "latitude": -37.806981,
+        "longitude": 144.973212
+      }
+    },
+    {
+      "name": "The Alfred Hospital",
+      "address": "55 Commercial Rd, Melbourne VIC 3004, Australia",
+      "coordinates": {
+        "latitude": -37.850425,
+        "longitude": 144.980727
+      }
+    },
+    {
+      "name": "Peter MacCallum Cancer Centre",
+      "address": "305 Grattan St, Melbourne VIC 3000, Australia",
+      "coordinates": {
+        "latitude": -37.798715,
+        "longitude": 144.95535
+      }
+    },
+    {
+      "name": "Austin Hospital",
+      "address": "145 Studley Rd, Heidelberg VIC 3084, Australia",
+      "coordinates": {
+        "latitude": -37.754576,
+        "longitude": 145.054622
+      }
+    },
+    {
+      "name": "Mercy Hospital for Women",
+      "address": "163 Studley Rd, Heidelberg VIC 3084, Australia",
+      "coordinates": {
+        "latitude": -37.754812,
+        "longitude": 145.057854
+      }
+    },
+    {
+      "name": "Monash Medical Centre",
+      "address": "246 Clayton Rd, Clayton VIC 3168, Australia",
+      "coordinates": {
+        "latitude": -37.924653,
+        "longitude": 145.120376
+      }
+    },
+    {
+      "name": "Northern Hospital",
+      "address": "185 Cooper St, Epping VIC 3076, Australia",
+      "coordinates": {
+        "latitude": -37.646572,
+        "longitude": 145.014091
+      }
+    },
+    {
+      "name": "Box Hill Hospital",
+      "address": "8 Arnold St, Box Hill VIC 3128, Australia",
+      "coordinates": {
+        "latitude": -37.817956,
+        "longitude": 145.12386
+      }
+    },
+    {
+      "name": "Western Hospital",
+      "address": "Gordon St, Footscray VIC 3011, Australia",
+      "coordinates": {
+        "latitude": -37.799953,
+        "longitude": 144.890295
+      }
+    }
+  ]
+}

@@ -20,6 +20,11 @@ const routes = [
   { path: '/signup', name: 'SignUp', component: SignUp },
   { path: '/appointment-booking', name: 'Appoinment', component: AppointmentBooking },
   {
+    path: '/HealthDepartment',
+    name: 'HealthDepartment',
+    component: () => import('../views/HealthDepartment.vue')
+  },
+  {
     path: '/admin-dashboard',
     name: 'AdminDashboard',
     component: AdminDashboard,
