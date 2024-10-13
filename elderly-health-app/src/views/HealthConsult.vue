@@ -72,9 +72,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="appointment in appointments" :key="appointment.id">
-                            <!-- Format the date to dd/mm/yyyy -->
                             <td>{{ formatDate(appointment.date) }}</td>
-                            <!-- Display only the hour -->
                             <td>{{ formatTime(appointment.time) }}</td>
                             <td>{{ appointment.status }}</td>
                             <td><button class="btn btn-danger btn-sm"
@@ -89,12 +87,11 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { auth, db } from '../firebase'; // Add Firestore reference
+import { auth, db } from '../firebase';
 import { collection, query, where, getDocs, deleteDoc, doc, getDoc } from 'firebase/firestore';
-import Datepicker from 'vue3-datepicker';  // Import Datepicker
-import Timepicker from 'vue3-timepicker';  // Import Timepicker
-import 'vue3-timepicker/dist/VueTimepicker.css'; // Import CSS for Timepicker
-
+import Datepicker from 'vue3-datepicker';
+import Timepicker from 'vue3-timepicker';
+import 'vue3-timepicker/dist/VueTimepicker.css';
 
 import {
     MDBInput,
@@ -110,6 +107,7 @@ import {
     MDBDropdownMenu,
     MDBDropdownItem,
 } from "mdb-vue-ui-kit";
+import { useRouter } from 'vue-router';  // Import vue-router to enable redirect
 
 export default {
     components: {
@@ -126,9 +124,10 @@ export default {
         MDBDropdownMenu,
         MDBDropdownItem,
         Datepicker,
-        Timepicker,  // Register the Timepicker component
+        Timepicker,
     },
     setup() {
+        const router = useRouter();  // Setup the router
         const appointmentForm = ref({
             name: '',
             email: '',
@@ -138,12 +137,10 @@ export default {
         });
         const successMessage = ref('');
         const errorMessage = ref('');
-        const appointments = ref([]);  // Store user's bookings
+        const appointments = ref([]);
 
         const formatDate = (date) => {
-            // Handle Firestore Timestamp or ISO string formats
             if (date.seconds) {
-                // If the date is a Firestore Timestamp, convert it to a JS Date object
                 const jsDate = new Date(date.seconds * 1000);
                 return jsDate.toLocaleDateString('en-GB', {
                     year: 'numeric',
@@ -151,7 +148,6 @@ export default {
                     day: '2-digit'
                 });
             } else if (typeof date === 'string') {
-                // If the date is an ISO string, convert it to a JS Date object
                 const jsDate = new Date(date);
                 return jsDate.toLocaleDateString('en-GB', {
                     year: 'numeric',
@@ -159,13 +155,11 @@ export default {
                     day: '2-digit'
                 });
             } else {
-                return 'Invalid Date';  // Fallback for incorrect formats
+                return 'Invalid Date';
             }
         };
 
-
         const formatTime = (time) => {
-            // Extract and display the hour from the time
             return `${time.HH}:00`;
         };
 
@@ -180,10 +174,9 @@ export default {
                 const appointmentData = {
                     ...appointmentForm.value,
                     userId,
-                    status: 'created', // New field: status
+                    status: 'created',
                 };
 
-                // Call the Firebase Cloud Function
                 const response = await fetch('https://us-central1-fit5032a2-83d10.cloudfunctions.net/bookAppointment', {
                     method: 'POST',
                     headers: {
@@ -196,9 +189,9 @@ export default {
 
                 if (response.ok) {
                     successMessage.value = 'Appointment booked successfully!';
-                    appointmentData.id = result.appointmentData.id; // Store the Firestore document ID returned by Cloud Function
+                    appointmentData.id = result.appointmentData.id;
                     errorMessage.value = '';
-                    fetchUserAppointments();  // Refresh the booking list after appointment is booked
+                    fetchUserAppointments();
                 } else {
                     throw new Error(result.message || 'Failed to book the appointment.');
                 }
@@ -208,29 +201,27 @@ export default {
             }
         };
 
-
         const fetchUserAppointments = async () => {
             try {
                 const user = auth.currentUser;
                 if (!user) return;
 
-                // Query appointments for the current user
                 const q = query(collection(db, 'appointments'), where('email', '==', user.email));
                 const querySnapshot = await getDocs(q);
 
                 appointments.value = querySnapshot.docs.map(doc => ({
-                    id: doc.id,  // Firestore document ID
+                    id: doc.id,
                     ...doc.data()
                 }));
             } catch (error) {
                 console.error('Failed to fetch appointments:', error);
             }
         };
+
         const deleteAppointment = async (appointmentId) => {
             try {
                 const appointmentDocRef = doc(db, 'appointments', appointmentId);
 
-                // Attempt to get the document from Firestore before deletion
                 const appointmentSnapshot = await getDoc(appointmentDocRef);
 
                 if (appointmentSnapshot.exists()) {
@@ -245,12 +236,13 @@ export default {
             }
         };
 
-        // Capture the logged-in user's email and fetch appointments on mount
         onMounted(() => {
             auth.onAuthStateChanged((user) => {
                 if (user) {
                     appointmentForm.value.email = user.email;
                     fetchUserAppointments();
+                } else {
+                    router.push('/login');  // Redirect to login if the user is not logged in
                 }
             });
         });
@@ -272,6 +264,5 @@ export default {
 <style scoped>
 .container {
     margin-top: 80px;
-    /* Adjust this value to match the height of the navbar */
 }
 </style>

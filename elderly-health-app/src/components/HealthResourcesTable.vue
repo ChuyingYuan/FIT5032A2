@@ -26,23 +26,20 @@
             <table class="table table-striped table-hover">
                 <thead>
                     <tr>
-                        <th scope="col">
-                            <button class="btn btn-link" @click="toggleSort('title')">Title
-                                <span v-if="sortKey === 'title'">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-                            </button>
-                        </th>
+                        <th scope="col">Title</th>
                         <th scope="col">Description</th>
                         <th scope="col">Resource</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="resource in sortedResources" :key="resource.id">
+                    <tr v-for="resource in paginatedResources" :key="resource.id">
                         <td>{{ resource.title }}</td>
                         <td>{{ resource.description }}</td>
                         <td>
                             <a :href="resource.url" target="_blank">View Resource</a>
                             <br>
                             <template v-if="isLoggedIn">
+                                <!-- Actions based on the filter -->
                                 <template v-if="activeFilter === 'saved'">
                                     <a href="#" class="ml-2" @click.prevent="unsaveResource(resource.id)">Unsave</a>
                                 </template>
@@ -91,7 +88,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { auth } from '../firebase';
+import { db, auth } from '../firebase';
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import RatingModal from './RatingModal.vue';
 
@@ -111,29 +109,50 @@ export default {
         const activeFilter = ref('all');
         const savedResourceIds = ref([]);
         const readResourceIds = ref([]);
-
-
-        // Sorting state
-        const sortKey = ref('title'); // Default sort by title
-        const sortOrder = ref('asc'); // Ascending by default
+        const isModalVisible = ref(false);
+        const selectedResourceId = ref(null);
+        const currentRating = ref(0);
 
         const fetchResources = async () => {
             try {
+                // Use the public URL of your S3 file
                 const response = await fetch('https://5032a2.s3.ap-southeast-2.amazonaws.com/resources.json');
-                if (!response.ok) throw new Error('Failed to fetch resources from S3.');
-                resources.value = await response.json();
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch resources from S3.');
+                }
+
+                resources.value = await response.json(); // Parse and store the data
             } catch (error) {
                 console.error('Failed to fetch resources from S3:', error);
-                feedbackMessage('Failed to fetch resources.');
+                showFeedbackMessage('Failed to fetch resources.');
+            }
+        };
+
+
+        const fetchUserResources = async () => {
+            if (!userId.value) return;
+
+            try {
+                const userDoc = await getDoc(doc(db, 'users', userId.value));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    savedResourceIds.value = userData.savedResources || [];
+                    readResourceIds.value = userData.readResources || [];
+                }
+            } catch (error) {
+                console.error('Failed to fetch user data:', error);
             }
         };
 
         onMounted(() => {
             fetchResources();
+
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     isLoggedIn.value = true;
                     userId.value = user.uid;
+                    fetchUserResources();
                 } else {
                     isLoggedIn.value = false;
                     userId.value = null;
@@ -145,6 +164,7 @@ export default {
 
         const filteredResources = computed(() => {
             let filtered = resources.value;
+
             if (activeFilter.value === 'saved') {
                 filtered = filtered.filter(resource => savedResourceIds.value.includes(resource.id));
             } else if (activeFilter.value === 'read') {
@@ -160,41 +180,171 @@ export default {
             return filtered;
         });
 
-        const sortedResources = computed(() => {
-            return [...filteredResources.value].sort((a, b) => {
-                let modifier = sortOrder.value === 'asc' ? 1 : -1;
-                if (a[sortKey.value].toLowerCase() < b[sortKey.value].toLowerCase()) return -1 * modifier;
-                if (a[sortKey.value].toLowerCase() > b[sortKey.value].toLowerCase()) return 1 * modifier;
-                return 0;
-            });
-        });
-
-        const totalFilteredResources = computed(() => sortedResources.value.length);
+        const totalFilteredResources = computed(() => filteredResources.value.length);
         const totalPages = computed(() => Math.ceil(totalFilteredResources.value / rowsPerPage.value));
 
         const paginatedResources = computed(() => {
             const start = (currentPage.value - 1) * rowsPerPage.value;
             const end = start + rowsPerPage.value;
-            return sortedResources.value.slice(start, end);
+            return filteredResources.value.slice(start, end);
         });
 
         const currentPageStart = computed(() => (currentPage.value - 1) * rowsPerPage.value + 1);
         const currentPageEnd = computed(() => Math.min(currentPageStart.value + rowsPerPage.value - 1, totalFilteredResources.value));
 
-        const updatePagination = () => currentPage.value = 1;
+        const updatePagination = () => {
+            currentPage.value = 1;
+        };
 
-        const previousPage = () => currentPage.value > 1 && currentPage.value--;
-        const nextPage = () => currentPage.value < totalPages.value && currentPage.value++;
-
-        const handleSearch = () => currentPage.value = 1;
-
-        const toggleSort = (key) => {
-            if (sortKey.value === key) {
-                sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'; // Toggle order
-            } else {
-                sortKey.value = key;
-                sortOrder.value = 'asc'; // Default to ascending when new key is chosen
+        const previousPage = () => {
+            if (currentPage.value > 1) {
+                currentPage.value--;
             }
+        };
+
+        const nextPage = () => {
+            if (currentPage.value < totalPages.value) {
+                currentPage.value++;
+            }
+        };
+
+        const handleSearch = () => {
+            currentPage.value = 1;
+        };
+
+        const setFilter = (filter) => {
+            activeFilter.value = filter;
+            currentPage.value = 1;
+        };
+
+        const saveResource = async (resourceId) => {
+            if (!userId.value) {
+                console.error('User not logged in.');
+                return;
+            }
+
+            try {
+                const userRef = doc(db, 'users', userId.value);
+                await updateDoc(userRef, {
+                    savedResources: arrayUnion(resourceId)
+                });
+                savedResourceIds.value.push(resourceId);
+                showFeedbackMessage('Resource saved successfully!');
+            } catch (error) {
+                showFeedbackMessage('Failed to save resource.');
+                console.error('Failed to save resource:', error);
+            }
+        };
+
+        const unsaveResource = async (resourceId) => {
+            if (!userId.value) {
+                console.error('User not logged in.');
+                return;
+            }
+
+            try {
+                const userRef = doc(db, 'users', userId.value);
+                await updateDoc(userRef, {
+                    savedResources: arrayRemove(resourceId)
+                });
+                savedResourceIds.value = savedResourceIds.value.filter(id => id !== resourceId);
+                showFeedbackMessage('Resource unsaved successfully!');
+            } catch (error) {
+                showFeedbackMessage('Failed to unsave resource.');
+                console.error('Failed to unsave resource:', error);
+            }
+        };
+
+        const markAsRead = async (resourceId) => {
+            if (!userId.value) {
+                console.error('User not logged in.');
+                return;
+            }
+
+            try {
+                const userRef = doc(db, 'users', userId.value);
+                await updateDoc(userRef, {
+                    readResources: arrayUnion(resourceId)
+                });
+                readResourceIds.value.push(resourceId);
+                showFeedbackMessage('Resource marked as read!');
+            } catch (error) {
+                showFeedbackMessage('Failed to mark resource as read.');
+                console.error('Failed to mark resource as read:', error);
+            }
+        };
+
+        const openModal = (resourceId) => {
+            const resource = resources.value.find(r => r.id === resourceId);
+            if (resource) {
+                selectedResourceId.value = resourceId;
+                currentRating.value = resource.userRatings.find(r => r.userId === userId.value)?.rating || 0;
+                isModalVisible.value = true;
+            }
+        };
+
+        const handleSubmitRating = (rating) => {
+            if (!selectedResourceId.value) return;
+
+            updateRating(selectedResourceId.value, rating);
+            isModalVisible.value = false;
+        };
+
+        const updateRating = async (resourceId, rating) => {
+            if (!userId.value) {
+                console.error('User not logged in.');
+                return;
+            }
+
+            const resource = resources.value.find(r => r.id === resourceId);
+            if (!resource) {
+                console.error('Resource not found.');
+                return;
+            }
+
+            try {
+                const existingRatingIndex = resource.userRatings.findIndex(r => r.userId === userId.value);
+
+                if (existingRatingIndex !== -1) {
+                    resource.userRatings[existingRatingIndex].rating = rating;
+                } else {
+                    resource.userRatings.push({
+                        userId: userId.value,
+                        rating: rating
+                    });
+                }
+
+                // Send the update request to API Gateway
+                const response = await fetch('https://b1pzvf0mhl.execute-api.ap-southeast-2.amazonaws.com/default/5032a2resources', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        resourceId,
+                        userId: userId.value,
+                        rating
+                    })
+                });
+
+                if (response.status === 200) {
+                    showFeedbackMessage('Rating updated successfully!');
+                } else {
+                    showFeedbackMessage('Failed to update rating.');
+                    console.error('Failed to update rating:', await response.text());
+                }
+            } catch (error) {
+                showFeedbackMessage('Failed to update rating.');
+                console.error('Failed to update rating:', error);
+            }
+        };
+
+
+        const showFeedbackMessage = (message) => {
+            feedbackMessage.value = message;
+            setTimeout(() => {
+                feedbackMessage.value = '';
+            }, 3000);
         };
 
         return {
@@ -204,6 +354,7 @@ export default {
             searchQuery,
             perPageOptions,
             paginatedResources,
+            filteredResources,
             totalResources,
             totalFilteredResources,
             totalPages,
@@ -213,13 +364,21 @@ export default {
             previousPage,
             nextPage,
             handleSearch,
+            saveResource,
+            unsaveResource,
+            markAsRead,
             isLoggedIn,
             feedbackMessage,
             activeFilter,
-            sortedResources,
-            toggleSort,
-            sortKey,
-            sortOrder
+            setFilter,
+            savedResourceIds,
+            readResourceIds,
+            updateRating,
+            isModalVisible,
+            openModal,
+            handleSubmitRating,
+            selectedResourceId,
+            currentRating
         };
     }
 };
