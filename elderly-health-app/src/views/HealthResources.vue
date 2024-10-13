@@ -5,7 +5,7 @@
         <MDBNavbarToggler @click="collapse1 = !collapse1" target="#navbarSupportedContent"></MDBNavbarToggler>
         <MDBCollapse v-model="collapse1" id="navbarSupportedContent">
             <MDBNavbarNav class="mb-2 mb-lg-0">
-                <MDBNavbarItem to="#" active>Home</MDBNavbarItem>
+                <MDBNavbarItem to="/" active>Home</MDBNavbarItem>
                 <MDBNavbarItem href="#">Features</MDBNavbarItem>
                 <MDBNavbarItem href="#">Contact</MDBNavbarItem>
                 <MDBNavbarItem href="#">About</MDBNavbarItem>
